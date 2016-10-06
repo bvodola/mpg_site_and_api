@@ -8,10 +8,14 @@ var morgan = require('morgan');
 var app = express();
 var port = (process.env.HOSTNAME == 'web506.webfaction.com' ? 99999 : 4000);
 
+// ==========
+// Middleware
+// ==========
+app.use(express.static('public'));
+
 //========
 // Routing
 //========
-
 app.get('/', function(req, res) {
 	res.sendFile(__dirname+'/public/index.html');
 });
