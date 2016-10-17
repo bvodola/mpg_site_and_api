@@ -10,7 +10,7 @@ var sass = require('node-sass-middleware');
 // App Definitions
 // ===============
 var app = express();
-var port = (process.env.HOSTNAME == 'web506.webfaction.com' ? 99999 : 4000);
+var port = (process.env.HOSTNAME == 'web506.webfaction.com' ? 14732 : 4000);
 
 var Schema = mongoose.Schema;
 mongoose.connect('mongodb://bvodola:qZwX1001@ds033086.mlab.com:33086/landing_db');
