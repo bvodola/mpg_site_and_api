@@ -7,12 +7,15 @@ var morgan = require('morgan');
 var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
 var sass = require('node-sass-middleware');
+var schedule = require('node-schedule');
+var https = require('https');
+var $ = require('jquery');
 
 // ===============
 // App Definitions
 // ===============
 var app = express();
-var port = (process.env.HOSTNAME == 'web506.webfaction.com' ? 14732 : 4000);
+var port = (process.env.HOSTNAME == 'web540.webfaction.com' ? 14732 : 5000);
 
 // ========
 // Database
@@ -89,6 +92,10 @@ app.get('/publishers', function(req, res) {
 	res.sendFile(__dirname+'/public/_site/publishers.html');
 });
 
+// ===========
+// API Routing
+// ===========
+
 app.post('/api/sale', function(req, res) {
   var sale_id = (typeof req.body.order_id !== 'undefined') ? req.body.order_id : '';
   var amount = (typeof req.body.amount !== 'undefined') ? req.body.amount : '';
@@ -105,6 +112,24 @@ app.post('/api/sale', function(req, res) {
     // Document saved.
     res.sendStatus(200);
   })
+});
+
+// =========
+// Cron Jobs
+// =========
+
+var j = schedule.scheduleJob({second: null,}, function(){
+
+
+  https.get('https://www.saibala.com.br', function(resp){
+    resp.on('data', function(chunk){
+      a = process.stdout.write(chunk);
+      console.log("-------------------");
+      console.log(a);
+    });
+  }).on("error", function(e){
+    console.log("Got error: " + e.message);
+  });
 });
 
 // ===============
