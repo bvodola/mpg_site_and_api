@@ -1,4 +1,6 @@
+// =======
 // Imports
+// =======
 var path = require('path');
 var express = require('express');
 var morgan = require('morgan');
@@ -12,14 +14,15 @@ var sass = require('node-sass-middleware');
 var app = express();
 var port = (process.env.HOSTNAME == 'web506.webfaction.com' ? 14732 : 4000);
 
+// ========
+// Database
+// ========
 var Schema = mongoose.Schema;
 mongoose.connect('mongodb://bvodola:qZwX1001@ds033086.mlab.com:33086/landing_db');
-
 
 // =======
 // Schemas
 // =======
-
 var salesSchema = new Schema({
     sale_id: String,
     name: String,
@@ -51,10 +54,15 @@ app.use(sass({
     prefix:  '/'
 }));
 
-app.use(express.static('public')); // Public Folder
+app.use(express.static('public/_site/')); // Static Site Folder
+app.use('/static', express.static('public/static/')); // Static Files Folder
+
 app.use(bodyParser.json()); // Support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // Support encoded bodies
 
+// ====
+// CORS
+// ====
 app.use(function(req, res, next) {
 	res.header("Access-Control-Allow-Origin", "*");
 	res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
@@ -66,10 +74,22 @@ app.use(function(req, res, next) {
 // Routing
 //========
 app.get('/', function(req, res) {
-	res.sendFile(__dirname+'/public/index.html');
+	res.sendFile(__dirname+'/public/_site/index.html');
 });
 
-app.post('/sale', function(req, res) {
+app.get('/advertisers', function(req, res) {
+	res.sendFile(__dirname+'/public/_site/advertisers.html');
+});
+
+app.get('/adtech', function(req, res) {
+	res.sendFile(__dirname+'/public/_site/adtech.html');
+});
+
+app.get('/publishers', function(req, res) {
+	res.sendFile(__dirname+'/public/_site/publishers.html');
+});
+
+app.post('/api/sale', function(req, res) {
   var sale_id = (typeof req.body.order_id !== 'undefined') ? req.body.order_id : '';
   var amount = (typeof req.body.amount !== 'undefined') ? req.body.amount : '';
   var client = (typeof req.body.client !== 'undefined') ? req.body.client : '';
