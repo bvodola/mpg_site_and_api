@@ -1,15 +1,15 @@
 // =======
 // Imports
 // =======
-var path = require('path');
-var express = require('express');
-var morgan = require('morgan');
-var bodyParser = require('body-parser');
-var mongoose = require('mongoose');
-var sass = require('node-sass-middleware');
-var schedule = require('node-schedule');
-var https = require('https');
-var $ = require('jquery');
+const path = require('path');
+const express = require('express');
+const morgan = require('morgan');
+const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
+const sass = require('node-sass-middleware');
+const schedule = require('node-schedule');
+const https = require('https');
+const cheerio = require('cheerio')
 
 // ===============
 // App Definitions
@@ -36,12 +36,22 @@ var salesSchema = new Schema({
     client: String,
     created: { type: Date, default: Date.now }
   },
-  {
-    strict: false
-  }
+  { strict: false }
+);
+
+var productsSchema = new Schema({
+    name: String,
+    price: String,
+    url: String,
+    img: String,
+    client_name: String,
+    created: { type: Date, default: Date.now }
+  },
+  { strict: false }
 );
 
 var Sale = mongoose.model('sales', salesSchema);
+var Product = mongoose.model('products', productsSchema);
 
 // ==========
 // Middleware
@@ -57,15 +67,15 @@ app.use(sass({
     prefix:  '/'
 }));
 
+// Static Configuration
 app.use(express.static('public/_site/')); // Static Site Folder
 app.use('/static', express.static('public/static/')); // Static Files Folder
 
+// Body Parser
 app.use(bodyParser.json()); // Support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // Support encoded bodies
 
-// ====
 // CORS
-// ====
 app.use(function(req, res, next) {
 	res.header("Access-Control-Allow-Origin", "*");
 	res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
@@ -114,22 +124,74 @@ app.post('/api/sale', function(req, res) {
   })
 });
 
+app.get('/api/test', function(req, res) {
+  fetchProducts('https://saibala.com.br/', {base_url: 'https://saibala.com.br/', clear_db: false});
+  res.end();
+});
+
+// ===========================
+// Products Fetching Functions
+// ===========================
+
+var fetchProducts = function(data_source_url, settings) {
+  var products = [];
+  var pageHtml = '';
+  var base_url = '';
+
+  if(typeof settings !== 'undefined') {
+    base_url = typeof( settings.base_url !== 'undefined') ? settings.base_url : data_source_url;
+    clear_db = typeof( settings.clear_db !== 'undefined') ? settings.clear_db : false;
+  }
+
+  https.get(data_source_url, function(resp){
+
+    resp.on('data', function(chunk){
+      pageHtml += chunk;
+    });
+
+    resp.on('end', function() {
+
+      const $ = cheerio.load(pageHtml);
+      $('h2').each(function(i,e) {
+        if($(e).text() == 'Cursos em Destaque') {
+          $($($(e).closest('#box-videos-index')).find('.box-video')).each(function(i,e){
+            var product = {
+              name: $($(e).find('.curso-title')).text(),
+              url: base_url+$($(e).find('a')).attr('href'),
+              img: base_url+$($(e).find('a > img')).attr('src'),
+              client: 'saibala'
+            };
+
+            Product.create({
+              name: product.name,
+              url: product.url,
+              img: product.img,
+              client: product.client
+            }, function (err, sale) {
+              if (err) {
+                console.log(err);
+              }
+              // Document saved.
+            });
+
+          });
+        }
+      });
+
+    });
+
+  }).on("error", function(e){
+    console.log("Error: " + e.message);
+  });
+
+}
+
 // =========
 // Cron Jobs
 // =========
 
-var j = schedule.scheduleJob({second: null,}, function(){
-
-
-  https.get('https://www.saibala.com.br', function(resp){
-    resp.on('data', function(chunk){
-      a = process.stdout.write(chunk);
-      console.log("-------------------");
-      console.log(a);
-    });
-  }).on("error", function(e){
-    console.log("Got error: " + e.message);
-  });
+var j = schedule.scheduleJob({hour: 1}, function(){
+  fetchProducts('https://saibala.com.br/', {base_url: 'https://saibala.com.br/'});
 });
 
 // ===============
