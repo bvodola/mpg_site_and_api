@@ -83,6 +83,9 @@ app.use(function(req, res, next) {
 	next();
 });
 
+// Template System
+app.set('view engine', 'ejs');
+
 //========
 // Routing
 //========
@@ -100,6 +103,20 @@ app.get('/adtech', function(req, res) {
 
 app.get('/publishers', function(req, res) {
 	res.sendFile(__dirname+'/public/_site/publishers.html');
+});
+
+app.get('/ads/saibala/728x90', function(req, res) {
+	res.sendFile(__dirname+'/public/ads/728x90.html');
+});
+
+app.get('/products/saibala', function(req,res) {
+  Product.find({}, function(e,data) {
+    if(e) console.log(e);
+    else {
+      var products = data;
+      res.send(products);
+    }
+  });
 });
 
 // ===========
