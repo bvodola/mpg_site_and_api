@@ -15,7 +15,7 @@ const cheerio = require('cheerio')
 // App Definitions
 // ===============
 var app = express();
-var port = (process.env.HOSTNAME == 'web540.webfaction.com' ? 14732 : 5000);
+var port = (process.env.HOSTNAME == 'web540.webfaction.com' ? 25145 : 5000);
 
 // ========
 // Database
