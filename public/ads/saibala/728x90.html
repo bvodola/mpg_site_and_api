@@ -11,10 +11,12 @@ a.crossDomain=!0:"object"===typeof b&&(b.crossDomain=!0));e&&("object"===typeof 
   // Main Variables
   // ==============
   var dom;
+  var client_name = 'saibala'
   var products = [];
-  // =============
-  // Configuration
-  // =============
+
+  // =======================
+  // Configuration Variables
+  // =======================
   var showPrice = false;
   var roundImage = true;
   var numberOfProducts = 4;
@@ -22,7 +24,18 @@ a.crossDomain=!0:"object"===typeof b&&(b.crossDomain=!0));e&&("object"===typeof 
 
   $.ajax({
       crossOrigin: true,
-      url: 'http://localhost:5000/products/saibala',
+      url: '/api/clients/'+client_name,
+      success: function(data) {
+          client = data;
+          $('.logo').attr('src', client.logo);
+          $('.subtitle').text(client.subtitle);
+
+      }
+  });
+
+  $.ajax({
+      crossOrigin: true,
+      url: '/api/products/'+client_name,
       success: function(data) {
           products = data;
           for(i=0; i<numberOfProducts; i++) {
@@ -54,12 +67,12 @@ a.crossDomain=!0:"object"===typeof b&&(b.crossDomain=!0));e&&("object"===typeof 
     transform: translateY(-50%);
     -webkit-transform: translateY(-50%);
   ">
-    <img src="https://saibala.com.br/images/logo.png" alt="logo" style="
+    <img class="logo" src="" alt="logo" style="
       width: 80%;
       height: auto;
       max-height: 80px;
     ">
-    <span style="
+    <span class="subtitle" style="
       font-size: 10px;
       margin: 5px 0 0 19px;
       position: relative;
@@ -68,7 +81,6 @@ a.crossDomain=!0:"object"===typeof b&&(b.crossDomain=!0));e&&("object"===typeof 
       text-transform: uppercase;
       font-weight: bold;
     ">
-      Cursos Online
     </span>
   </div>
 </div>

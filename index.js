@@ -50,8 +50,18 @@ var productsSchema = new Schema({
   { strict: false }
 );
 
+var clientsSchema = new Schema({
+    name: String,
+    logo: String,
+    url: String,
+    created: { type: Date, default: Date.now }
+  },
+  { strict: false }
+);
+
 var Sale = mongoose.model('sales', salesSchema);
 var Product = mongoose.model('products', productsSchema);
+var Client = mongoose.model('clients', clientsSchema);
 
 // ==========
 // Middleware
@@ -105,18 +115,9 @@ app.get('/publishers', function(req, res) {
 	res.sendFile(__dirname+'/public/_site/publishers.html');
 });
 
-app.get('/ads/saibala/728x90', function(req, res) {
-	res.sendFile(__dirname+'/public/ads/728x90.html');
-});
-
-app.get('/products/saibala', function(req,res) {
-  Product.find({}, function(e,data) {
-    if(e) console.log(e);
-    else {
-      var products = data;
-      res.send(products);
-    }
-  });
+// Ads Routing
+app.get('/ads/:client_name/:ad_format', function(req, res) {
+	res.sendFile(__dirname+'/public/ads/'+req.params.client_name+'/'+req.params.ad_format+'.html');
 });
 
 // ===========
@@ -141,10 +142,32 @@ app.post('/api/sale', function(req, res) {
   })
 });
 
-app.get('/api/test', function(req, res) {
+app.get('/api/fetch/saibala', function(req, res) {
   fetchProducts('https://saibala.com.br/', {base_url: 'https://saibala.com.br/', clear_db: false});
   res.end();
 });
+
+app.get('/api/products/:client_name/:number_of_products', function(req,res) {
+  Product.find({client: req.params.client_name}, function(e,data) {
+    if(e) console.log(e);
+    else {
+      var products = shuffle(data);
+      res.send(products);
+    }
+  }).limit(parseInt(req.params.number_of_products));
+});
+
+app.get('/api/clients/:client_name', function(req,res) {
+  Client.findOne({client_name: req.params_client_name},  function(e,data) {
+    if(e) console.log(e);
+    else {
+      var client = data;
+      res.send(client);
+    }
+  });
+});
+
+
 
 // ===========================
 // Products Fetching Functions
@@ -201,6 +224,28 @@ var fetchProducts = function(data_source_url, settings) {
     console.log("Error: " + e.message);
   });
 
+}
+
+// ==============
+// Shuffles Array
+// ==============
+function shuffle(array) {
+  var currentIndex = array.length, temporaryValue, randomIndex;
+
+  // While there remain elements to shuffle...
+  while (0 !== currentIndex) {
+
+    // Pick a remaining element...
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1;
+
+    // And swap it with the current element.
+    temporaryValue = array[currentIndex];
+    array[currentIndex] = array[randomIndex];
+    array[randomIndex] = temporaryValue;
+  }
+
+  return array;
 }
 
 // =========
