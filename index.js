@@ -8,8 +8,10 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const sass = require('node-sass-middleware');
 const schedule = require('node-schedule');
+const http = require('http');
 const https = require('https');
-const cheerio = require('cheerio')
+const cheerio = require('cheerio');
+const url = require('url');
 
 // ===============
 // App Definitions
@@ -143,7 +145,7 @@ app.post('/api/sale', function(req, res) {
 });
 
 app.get('/api/fetch/saibala', function(req, res) {
-  fetchProducts('https://saibala.com.br/', {base_url: 'https://saibala.com.br/', clear_db: false});
+  fetchProducts('saibala');
   res.end();
 });
 
@@ -173,56 +175,73 @@ app.get('/api/clients/:client_name', function(req,res) {
 // Products Fetching Functions
 // ===========================
 
-var fetchProducts = function(data_source_url, settings) {
-  var products = [];
-  var pageHtml = '';
-  var base_url = '';
+var fetchProducts = function(client_name) {
 
-  if(typeof settings !== 'undefined') {
-    base_url = typeof( settings.base_url !== 'undefined') ? settings.base_url : data_source_url;
-    clear_db = typeof( settings.clear_db !== 'undefined') ? settings.clear_db : false;
-  }
+  Client.findOne({name: client_name}, function(e, client) {
 
-  https.get(data_source_url, function(resp){
+    if(e)
+      console.log(e);
 
-    resp.on('data', function(chunk){
-      pageHtml += chunk;
-    });
+    else {
+      console.log(typeof client);
 
-    resp.on('end', function() {
+      var data_page_url = url.parse(client.urls.base);
+      https.get(data_page_url, function(resp){
 
-      const $ = cheerio.load(pageHtml);
-      $('h2').each(function(i,e) {
-        if($(e).text() == 'Cursos em Destaque') {
-          $($($(e).closest('#box-videos-index')).find('.box-video')).each(function(i,e){
-            var product = {
-              name: $($(e).find('.curso-title')).text(),
-              url: base_url+$($(e).find('a')).attr('href'),
-              img: base_url+$($(e).find('a > img')).attr('src'),
-              client: 'saibala'
-            };
+        var pageHtml = '';
 
-            Product.create({
-              name: product.name,
-              url: product.url,
-              img: product.img,
-              client: product.client
-            }, function (err, sale) {
-              if (err) {
-                console.log(err);
+        resp.on('data', function(chunk){
+          pageHtml += chunk;
+        });
+
+        resp.on('end', function() {
+
+          const $ = cheerio.load(pageHtml);
+
+          // =======
+          // saibala
+          // =======
+          if(client.name == 'saibala') {
+            $('h2').each(function(i,e) {
+              if($(e).text() == 'Cursos em Destaque') {
+                $($($(e).closest('#box-videos-index')).find('.box-video')).each(function(i,e){
+                  var product = {
+                    name: $($(e).find('.curso-title')).text(),
+                    url: client.urls.base+$($(e).find('a')).attr('href'),
+                    img: client.urls.base+$($(e).find('a > img')).attr('src'),
+                    client: 'saibala'
+                  };
+
+                  Product.create({
+                    name: product.name,
+                    url: product.url,
+                    img: product.img,
+                    client: product.client
+                  }, function (err, product) {
+                    if (err) {
+                      console.log(err);
+                    }
+                    // Document saved.
+                  });
+
+                });
               }
-              // Document saved.
             });
+          }
 
-          });
-        }
+        });
+
+      }).on("error", function(e){
+        console.log("Error on "+client.urls.products+" GET: " + e.message);
       });
+    }
 
-    });
 
-  }).on("error", function(e){
-    console.log("Error: " + e.message);
   });
+
+
+
+
 
 }
 
