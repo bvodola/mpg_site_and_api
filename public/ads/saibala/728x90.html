@@ -11,7 +11,7 @@ a.crossDomain=!0:"object"===typeof b&&(b.crossDomain=!0));e&&("object"===typeof 
   // Main Variables
   // ==============
   var dom;
-  var client_name = 'saibala'
+  var client_name = 'saibala' // Change to the desired client
   var products = [];
 
   // =======================
@@ -35,7 +35,7 @@ a.crossDomain=!0:"object"===typeof b&&(b.crossDomain=!0));e&&("object"===typeof 
 
   $.ajax({
       crossOrigin: true,
-      url: '/api/products/'+client_name,
+      url: '/api/products/'+client_name+'/'+numberOfProducts,
       success: function(data) {
           products = data;
           for(i=0; i<numberOfProducts; i++) {

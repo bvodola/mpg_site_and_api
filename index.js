@@ -24,6 +24,7 @@ var port = (process.env.HOSTNAME == 'web540.webfaction.com' ? 25145 : 5000);
 // ========
 var Schema = mongoose.Schema;
 mongoose.connect('mongodb://bvodola:qZwX1001@ds033086.mlab.com:33086/landing_db');
+mongoose.Promise = global.Promise;
 
 // =======
 // Schemas
@@ -144,11 +145,15 @@ app.post('/api/sale', function(req, res) {
   })
 });
 
-app.get('/api/fetch/saibala', function(req, res) {
-  fetchProducts('saibala');
+app.get('/api/fetch/2peace', function(req, res) {
+  fetchProducts('2peace');
   res.end();
 });
 
+
+// =======================================
+// Get the latest products from the client
+// =======================================
 app.get('/api/products/:client_name/:number_of_products', function(req,res) {
   Product.find({client: req.params.client_name}, function(e,data) {
     if(e) console.log(e);
@@ -159,6 +164,9 @@ app.get('/api/products/:client_name/:number_of_products', function(req,res) {
   }).limit(parseInt(req.params.number_of_products));
 });
 
+// =========================
+// Get info about the Client
+// =========================
 app.get('/api/clients/:client_name', function(req,res) {
   Client.findOne({client_name: req.params_client_name},  function(e,data) {
     if(e) console.log(e);
@@ -183,11 +191,10 @@ var fetchProducts = function(client_name) {
       console.log(e);
 
     else {
-      console.log(typeof client);
+      client = client.toObject();
+      var data_page_url = url.parse(client.urls.products);
 
-      var data_page_url = url.parse(client.urls.base);
-      https.get(data_page_url, function(resp){
-
+      var genericFetch = function(resp) {
         var pageHtml = '';
 
         resp.on('data', function(chunk){
@@ -229,18 +236,61 @@ var fetchProducts = function(client_name) {
             });
           }
 
-        });
+          if(client.name = '2peace') {
+            console.log($($($('table')[8]).children('tbody').children('tr'))[0]);
+            $($($($('table')[8]).children('tbody').children('tr')[0]).children('td')).each(function(i,e){
+              var product = {
+                name: $(e).find('.font_titulo_vitrine').text(),
+                url: client.urls.base+$(e).find('a').attr('href').substr(2),
+                img: $(e).find('img').attr('src'),
+                price: $(e).find('.lblPrecoDefault').text().trim(),
+                client: '2peace'
+              };
+              console.log(product);
 
-      }).on("error", function(e){
-        console.log("Error on "+client.urls.products+" GET: " + e.message);
-      });
+              // Product.create({
+              //   name: product.name,
+              //   url: product.url,
+              //   img: product.img,
+              //   client: product.client
+              // }, function (err, product) {
+              //   if (err) {
+              //     console.log(err);
+              //   }
+              //   // Document saved.
+              // });
+
+
+            });
+          }
+
+        });
+      }
+
+      // HTTPS
+      if(client.urls.products.indexOf('https') == 0) {
+        https.get(data_page_url, function(resp){
+          genericFetch(resp);
+        }).on("error", function(e){
+          console.log("Error on "+client.urls.products+" HTTPS GET: " + e.message);
+        });
+      }
+
+      // HTTP
+      else {
+        http.get(data_page_url, function(resp){
+          genericFetch(resp);
+        }).on("error", function(e){
+          console.log("Error on "+client.urls.products+" HTTPS GET: " + e.message);
+        });
+      }
+
+
+
     }
 
 
   });
-
-
-
 
 
 }
